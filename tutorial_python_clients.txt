@@ -1,0 +1,340 @@
+USAGE OF PYTHON CLIENTS:
+=======================
+The primary script named client_all_webservices.py contains the code for using all the available methods for the webservices NEWS and BWS.
+
+A. PRE-REQUISITES:
+===================
+1. python suds has to be installed. (ref: https://fedorahosted.org/suds/)
+
+2. Please make sure that the other two scripts- client_bnfinder.py, and client_bnfinder_get_result.py are kept within the same directory as client_all_webservices.py 
+
+B. STRUCTURE OF THE CODE:
+=========================
+- The list of available methods from NEWS are available here: http://www.nencki-genomics.org/webservices/doku.php?id=tutorial:webservices_expression
+- In the primary script client_all_webservices.py, all the method descriptions are present as comments (with "#" in the beginning of the line).
+- Immediately after the descriptive comments, example code for the corresponding methods are included.
+- By default the example codes for the methods are within triple-quotes (""" """), making those as doc-strings.
+  The required functions and operation of one webservice-method (GetDataFromFiles) are not within triple-quotes.
+  This facilitates in uploading your data files and converting them into data-objects.
+- Please remove the triple-quotes from the beginning and end of the code for the webservice methods that you are interested in using.
+
+For example:
+----------------------------------------------------------
+### Cluster Client
+### 6. DoCluster(NgpObject dataset, ), output: NgpObject
+#This function computes k-means clustering. The number of cluster is defined by silhouette score.
+
+### Remove the Docstring quotes in the following section to invoke Cluster client!
+# Start of Cluster_client_section #
+"""
+sys.stdout.write("\n*** MESSAGE: YOU HAVE INVOKED THE CLUSTER_CLIENT ***\n")
+input_data_obj = data_obj
+try:
+    cluster_obj = client.service.DoCluster(input_data_obj)
+    # for writing data to file, uncomment the following lines:
+    encoded_file_clust = client.service.ReturnDataAsTSV(cluster_obj)
+    sys.stdout.write("\nMESSAGE: *** PLEASE FIND THE RESULTS IN THE FOLLOWING FILE IN THE PRESENT DIRECTORY: cluster_output_%s.txt ***\n"%(data_name))
+    time = datetime.datetime.now()
+    with open("cluster_output_%s.txt"%(data_name), "w")as f_clust:
+        file_intro_clust = "### Result of clustering performed on %s dataset.\n### %s\n"%(data_name,time)
+        f_clust.write(file_intro_clust)
+        f_clust.write(str(base64.b64decode(encoded_file_clust[0])))
+except:
+    print 'Cluster Failed. Details: %s' % sys.exc_info()[1]
+"""
+# End of Cluster_client_section #
+------------------------------------------------------------
+  In the code snippet above, remove the triple-quotes AFTER the line "# Start of Cluster_client_section #", and BEFORE the line "# End of Cluster_client_section #".
+
+
+C. WORK-FLOW:
+=======================
+a) Running the Code and Providing Arguments:
+   ----------------------------------------
+   You can just run the primary script in the terminal as: python client_all_webservices.py
+   Arguments are provided to the program in an interactive manner. The program will prompt the user for inputs (values or choices).
+   In some cases, default choices are prompted, and other possible options are enlisted. If you wish to choose some other values than the 
+   prompted/default one, you can remove the existing choice by pressing "backspace"/"delete" buttons on your keyboard, and type in the other choices.
+
+b) Different Sections:
+   ------------------
+   #The method GetDataFromFiles is used to convert your data file, row-attribute file and column-attribute file into a data-object ("data_obj" in code).
+   #This data-object is used by the following methods (with example usage mentioned to the right):
+   
+   - Methods in Section I of the script (Gene-Expression Data Analysis):
+     ------------------------------------------------------------------
+     This is the default flow for analysing and plotting of gene-expression data. The user is guided through the flow by prompting for choices and inputs.
+     Following are the methods from NEWS used for the flow, to perform specific functions:
+
+     - GetDataFromFiles: for providing your data file, row-attributes file and column-attributes file as inputs.
+
+     - TakeByColumnRow: for regrouping your data-columns (if they are NOT already) in the format: control, treatment1, treatment2,...etc.
+
+     - DatasetFunction: for transforming the data. (log2 transformation used in the default flow. you can change it as per your requirement.)
+
+     - GroupByDataset and DatasetOperator (together, consecutively): for mean-centering the data.
+
+     - DoTtest and DoAnova (within the section "Do_Statistical_Tests (t-test and ANOVA)" ): for performing t-test or ANOVA on your data.
+
+       These two methods will generate a new data-object ("stat_obj" in the code). By default, this data-object is converted into tab-separated, binary values ("tsv_obj" in the code)
+       by using the method: ReturnDataAsTSV; and is then written into a file after decoding the "tsv_obj" with "base64.b64decode".
+       This file is saved within the directory where the code is being run.
+
+     - CutData: for retreiving parts of your dataset based on significant statistics.
+       this takes two objects as inputs, "data_obj" and "stat_obj"; it then checks the condition that you have provided (e.g. p_val LESS 0.05) from "stat_obj",
+       and outputs corresponding data from "data_obj" as a new object ("cut_obj_1", "cut_obj_2" in the code). These objects are saved into the current working directory as tab-separated files like above.
+
+     - DoCluster and DoPlot: for clustering (if you wish) and plotting your data (the data either after or before cut operations, depending on what you opt for).
+ 
+   - Methods in Section II of the script (Gene Regulation):
+     -----------------------------------------------------
+     - BNFinder Webservices(BWS): "data_obj" is passed to BWS methods for gene-regulation analysis.
+      
+   - Methods in Section III (Other Methods of NEWS- Examples):
+     --------------------------------------------------------
+     - There are several methods for different operations on one or more dataset(s) (or data-objects) in this section:
+       DatasetFunPerRowCol, DatasetOperator, MergeData, SortColumnsRows, SortDataset, TakeByColumnRow.
+
+D. EXAMPLE WORK-FLOWS:
+=====================
+
+a) Gene-Expression Data Analysis (Section I in the code):
+   -----------------------------------------------------
+   #1. Run the primary script in the terminal: python client_all_webservices.py
+   #2. You see the following message on screen: CONNECTING TO THE WEBSERVICE. PLEASE WAIT FOR A WHILE... :)
+   #3. After getting connected, the program prompts as following:
+
+   #      Please type the pathname of the data file: 
+   #      Please type the pathname of the row_attributes file: 
+   #      Please type the pathname of the column-attributes file: 
+
+   #   You can provide either the aboslute path-names or the relative path-names of respective files.
+   #   eg, /home/NEWS_BWS/sample_data/sample_data_file.txt
+   #   OR, sample_data/sample_data_file.txt (if you are already in NEWS_BWS directory)
+   #   OR, ../../sample_data/sample_data_file.txt 
+
+
+The program's standard output on terminal screen is represented in the documentation below by indented (with double "tab") lines .
+
+1.  Open your terminal.
+
+2.  Go to the directory where the client scripts and datasets are kept. (You may keep your datasets in different directory. See below for details.)
+
+3.  Type: 
+		python client_all_webservices.py
+
+4.  The program starts running and You see the following message:
+
+		CONNECTING TO THE WEBSERVICE. PLEASE WAIT FOR A WHILE... :)
+
+5.  		MESSAGE: *** YOU HAVE INVOKED THE READ_DATA_FROM_FILE CLIENT ***
+
+6. Below, the values after “:” are inputs by the user as response to the prompt. After providing the input values, press Enter on the keyboard.
+
+ 		Please type the pathname of the data file: sample_data_file.txt
+
+[NB: You can provide either the aboslute path-names or the relative path-names of respective files.
+ For example, given that your datafiles are in ”/home/NEWS_BWS/sample_data/” directory, you can try any of these:
+/home/NEWS_BWS/sample_data/sample_data_file.txt
+OR, sample_data/sample_data_file.txt (if you are already in NEWS_BWS directory)
+OR, ../../sample_data/sample_data_file.txt ]
+
+7.  		Please type the pathname of the row-attributes file: sample_row_attribute_data_file.txt
+
+8.  		Please type the pathname of the column-attributes file: sample_column_attribute_data_file.txt
+
+9.  		Dataset Name: sample_dataset_run
+
+10.  		Dataset Description: example_tutorial
+
+11.  		MESSAGE: *** THE FILE OBJECT FORMAT IS BEING CONVERTED. PLEASE WAIT FOR A FEW MOMENTS... ***
+
+12. If no error occurs, then the following message appears:
+
+		MESSAGE: *** THE OBJECT IS READY NOW! ***
+
+13. 		MESSAGE: *** THE COLUMN ATTRIBUTES OF YOUR DATA ARE AS FOLLOWS: ***
+
+		file	description	treatment
+
+		CT_A_Rat230_2.CEL	D3M1	mgcm
+
+		CT_B_Rat230_2.CEL	D3M2	mgcm
+
+		GCH_A_Rat230_2.CEL	D3G1	gcm
+
+		GCH_B_Rat230_2.CEL	D3G2	gcm
+
+		RAT_1.CEL	D1M1	mgcm
+
+		RAT_1_B.CEL	D1M2	mgcm
+
+		RAT_1_M.CEL	D2M1	mgcm
+
+		RAT_2_M.CEL	D2M2	mgcm
+
+		RAT_3.CEL	D1L1	lps
+
+		RAT_3_B.CEL	D1L2	lps
+
+		RAT_3_M.CEL	D2G1	gcm
+
+		RAT_4_M.CEL	D2G2	gcm
+
+		RAT_5_M.CEL	D2L1	lps
+
+		RAT_6_M.CEL	D2L2	lps
+
+		['file', 'description', 'treatment']
+
+14. 		Please Type the Column-Attribute Name of the Column that Contains the Names of Control and Treatment Groups: treatment
+
+15.  		Please Type the Name of Your Control Group (which is a Column-Attribute Value within the Column with Column-Attribute Name Above): mgcm
+
+16.  		MESSAGE: *** YOU CAN REORDER YOUR DATA COLUMNS IF YOU NEED, e.g., REORDER THE COLUMNS TO KEEP controls, treatment_1, and treatment_2 COLUMNS RESPECTIVELY TOGETHER ***
+
+		Do You Want to Reorder Your Data-columns?[yes/no]: yes
+
+17.  		Please Provide the Column Attribute Values in the Following Comma-separated Format: ctrl, treatment_1, treatment_2, ... : mgcm, gcm, lps
+
+18. If no error occurs, then the reordered dataset is printed on the terminal. (First the new ordering of treatment groups are printed; and then header of first 10 rows and tail of last 4 rows)
+		['mgcm', 'gcm', 'lps']
+		ensembl_gene	CT_A_Rat230_2.CEL	CT_B_Rat230_2.CEL	RAT_1.CEL	RAT_1_B.CEL	RAT_1_M.CEL	RAT_2_M.CEL	GCH_A_Rat230_2.CEL	GCH_B_Rat230_2.CEL	RAT_3_M.CEL	RAT_4_M.CEL	RAT_3.CEL	RAT_3_B.CEL	RAT_5_M.CEL	RAT_6_M.CEL
+		ENSRNOG00000014670	7.51777	7.38037	7.396	7.35317	7.15534	7.20659	7.37068	7.10013	7.15273	7.00929	7.00064	6.7228	6.60229	6.68867
+		ENSRNOG00000019477	5.17376	5.21535	5.25508	5.53052	5.41692	5.60628	5.59373	5.63605	5.58526	6.11566	5.59591	5.44538	5.76295	6.02833
+		ENSRNOG00000019154	8.64901	8.67573	8.11793	8.35167	8.54748	8.64754	8.40595	8.45157	8.53629	8.40954	7.77299	7.92508	8.18685	8.04647
+		ENSRNOG00000001418	9.65772	9.69279	9.78208	9.84484	9.83026	9.70049	9.60431	9.73774	9.77213	9.54187	9.58202	9.64227	9.58014	9.42179
+		ENSRNOG00000021794	7.70749	7.74876	7.6531	7.58297	7.7857	7.83661	7.80807	7.87834	7.80765	7.91939	7.84196	8.06783	8.01314	7.96862
+		ENSRNOG00000027818	8.07799	7.93724	8.04357	8.07849	8.08827	8.21353	8.19592	8.06958	8.1408	8.15502	8.07752	8.0747	8.23837	8.21354
+		ENSRNOG00000030049	7.99393	7.72944	7.93015	7.69925	8.01288	8.03426	8.26922	8.26229	8.56299	8.53798	7.80419	7.67543	8.0452	7.89994
+		ENSRNOG00000000779	8.82492	8.87647	9.08881	9.08578	9.15641	9.0847	8.9206	9.03089	9.0887	9.0601	9.34838	9.35639	9.31122	9.34519
+		ENSRNOG00000019028	9.61439	9.87825	9.30695	9.24296	9.52646	9.6981	9.35195	9.39366	9.30282	9.81326	9.69809	10.0266	10.1193	9.9911
+		ENSRNOG00000049057	8.53427	8.45701	7.70682	8.08395	8.07413	8.23322	8.50857	8.34007	7.79137	7.78678	6.51255	6.71225	6.80897	6.74129
+		[...]
+		ENSRNOG00000046480	6.36453	6.33488	6.22793	6.16557	6.26005	6.31839	6.40123	6.86042	6.61654	6.57044	6.43298	6.62742	6.53707	6.37927
+		ENSRNOG00000031651	7.70306	7.65725	7.52796	7.73783	7.58181	7.59724	7.64828	7.09507	7.27389	7.35265	7.13081	7.17961	7.12627	7.13817
+		ENSRNOG00000017900	6.9913	6.29508	6.08178	6.62169	6.86411	6.7193	6.36576	6.24424	5.89952	5.93442	5.75018	5.69773	5.59269	5.75193
+		ENSRNOG00000048870	6.8445	6.94849	7.11914	6.83332	6.66478	6.62848	7.39377	7.05587	6.95451	6.75357	6.85246	6.84632	6.51254	6.58018
+
+19. 		MESSAGE: *** THIS SECTION CAN BE USED FOR log2 TRANSFORMATION OF YOUR DATA ***
+
+		Would You Like to log-transform Your Data?[yes/no]: no
+
+[As this sample dataset is already log-transformed, we choose not to transform it again.]
+
+20.  		MESSAGE: *** THIS SECTION CAN BE USED FOR MEAN-CENTERING YOUR DATA ***
+
+		Do You Want to Mean-Center Your Data?[yes/no]: yes
+
+21.  If no error occurs, then the following is printed on the terminal: First, the mean and standard deviation for each treatment group for each row. Second, the mean-centered values for each column in each row. [The header of 10 rows and tail of 4 rows are printed from the whole dataset.]
+
+The mean and standard deviation of each treatment group:
+
+		ensembl_gene	gcm__mean	gcm__std	lps__mean	lps__std	mgcm__mean	mgcm__std
+		ENSRNOG00000014670	7.1582075	0.153540422555	6.7536	0.172325295686	7.33487333333	0.132876789646
+		ENSRNOG00000019477	5.732675	0.25628811658	5.7081425	0.249776008105	5.36631833333	0.17852082998
+		ENSRNOG00000019154	8.4508375	0.0606163824802	7.9828475	0.176108013139	8.49822666667	0.221390072286
+		ENSRNOG00000001418	9.6640125	0.108946954792	9.556555	0.0943634549671	9.75136333333	0.0783506096126
+		ENSRNOG00000021794	7.8533625	0.0551499455275	7.9728875	0.096254114847	7.719105	0.0918107232843
+		ENSRNOG00000027818	8.14033	0.0526365766363	8.1510325	0.0871125032646	8.07318166667	0.0886945302524
+		ENSRNOG00000030049	8.40812	0.164730016896	7.85619	0.156009636668	7.899985	0.148250318145
+		ENSRNOG00000000779	9.0250725	0.0735384957578	9.340295	0.019947705799	9.019515	0.134544608625
+		ENSRNOG00000019028	9.4654225	0.234844887869	9.9587725	0.181998242734	9.54451833333	0.239811779645
+		ENSRNOG00000049057	8.1066975	0.373158978218	6.69376	0.12742499637	8.18156666667	0.299797527186
+		[...]
+		ENSRNOG00000046480	6.6121575	0.1896349434	6.494185	0.110366356136	6.27855833333	0.0745948648144
+		ENSRNOG00000031651	7.3424725	0.230603096882	7.143715	0.0244272054617	7.63419166667	0.0792589047154
+		ENSRNOG00000017900	6.110985	0.229898413145	5.6981325	0.0746578776263	6.59554333333	0.346116087963
+		ENSRNOG00000048870	7.03943	0.26755339355	6.697875	0.177138002228	6.839785	0.181767199214
+
+The mean-centered values as following:
+
+		ensembl_gene	CT_A_Rat230_2.CEL	CT_B_Rat230_2.CEL	RAT_1.CEL	RAT_1_B.CEL	RAT_1_M.CEL	RAT_2_M.CEL	GCH_A_Rat230_2.CEL	GCH_B_Rat230_2.CEL	RAT_3_M.CEL	RAT_4_M.CEL	RAT_3.CEL	RAT_3_B.CEL	RAT_5_M.CEL	RAT_6_M.CEL
+		ENSRNOG00000014670	0.18289666667	0.04549666667	0.06112666667	0.01829666667	-0.17953333333	-0.12828333333			0.03580666667	-0.23474333333	-0.18214333333	-0.32558333333	-0.33423333333	-0.61207333333	-0.73258333333	-0.64620333333
+		ENSRNOG00000019477	-0.19255833333	-0.15096833333	-0.11123833333	0.16420166667	0.05060166667	0.23996166667	0.22741166667	0.26973166667	0.21894166667	0.74934166667	0.22959166667	0.07906166667	0.39663166667	0.66201166667
+		ENSRNOG00000019154	0.15078333333	0.17750333333	-0.38029666667	-0.14655666667	0.04925333333	0.14931333333	-0.09227666667	-0.04665666667	0.03806333333	-0.08868666667	-0.72523666667	-0.57314666667	-0.31137666667	-0.45175666667
+		ENSRNOG00000001418	-0.09364333333	-0.05857333333	0.03071666667	0.09347666667	0.07889666667	-0.05087333333	-0.14705333333	-0.01362333333	0.02076666667	-0.20949333333	-0.16934333333	-0.10909333333	-0.17122333333	-0.32957333333
+		ENSRNOG00000021794	-0.011615	0.029655	-0.066005	-0.136135	0.066595	0.117505	0.088965	0.159235	0.088545	0.200285	0.122855	0.348725	0.294035	0.249515
+		ENSRNOG00000027818	0.00480833333	-0.13594166667	-0.02961166667	0.00530833333	0.01508833333	0.14034833333	0.12273833333	-0.00360166667	0.06761833333	0.08183833333	0.00433833333	0.00151833333	0.16518833333	0.14035833333
+		ENSRNOG00000030049	0.093945	-0.170545	0.030165	-0.200735	0.112895	0.134275	0.369235	0.362305	0.663005	0.637995	-0.095795	-0.224555	0.145215	-4.50000000001e-05
+		ENSRNOG00000000779	-0.194595	-0.143045	0.069295	0.066265	0.136895	0.065185	-0.098915	0.011375	0.069185	0.040585	0.328865	0.336875	0.291705	0.325675
+		ENSRNOG00000019028	0.06987166667	0.33373166667	-0.23756833333	-0.30155833333	-0.01805833333	0.15358166667	-0.19256833333	-0.15085833333	-0.24169833333	0.26874166667	0.15357166667	0.48208166667	0.57478166667	0.44658166667
+		ENSRNOG00000049057	0.35270333333	0.27544333333	-0.47474666667	-0.09761666667	-0.10743666667	0.05165333333	0.32700333333	0.15850333333	-0.39019666667	-0.39478666667	-1.66901666667	-1.46931666667	-1.37259666667	-1.44027666667
+		[...]
+		ENSRNOG00000046480	0.08597166667	0.05632166667	-0.05062833333	-0.11298833333	-0.01850833333	0.03983166667	0.12267166667	0.58186166667	0.33798166667	0.29188166667	0.15442166667	0.34886166667	0.25851166667	0.10071166667
+		ENSRNOG00000031651	0.06886833333	0.02305833333	-0.10623166667	0.10363833333	-0.05238166667	-0.03695166667	0.01408833333	-0.53912166667	-0.36030166667	-0.28154166667	-0.50338166667	-0.45458166667	-0.50792166667	-0.49602166667
+		ENSRNOG00000017900	0.39575666667	-0.30046333333	-0.51376333333	0.02614666667	0.26856666667	0.12375666667	-0.22978333333	-0.35130333333	-0.69602333333	-0.66112333333	-0.84536333333	-0.89781333333	-1.00285333333	-0.84361333333
+		ENSRNOG00000048870	0.004715	0.108705	0.279355	-0.006465	-0.175005	-0.211305	0.553985	0.216085	0.114725	-0.086215	0.012675	0.006535	-0.327245	-0.259605
+
+22. 		MESSAGE:  *** THIS IS THE SECTION FOR STATISTICAL ANALYSIS OF THE DATA ***
+
+		Would You Like to Perform Some Statistical Tests (t-test/ANOVA) on Your Data? [options: yes/no]:  yes
+
+23. 		MESSAGE: *** YOU HAVE INVOKED THE DO_STATISTICS CLIENT *** 
+
+		What Would You like to Do? 
+		options:  T (for t-test)/ A (for ANOVA): T
+
+24.  		Please provide the names of the first group: mgcm
+
+25.  		Please provide the names of the second group: lps
+
+26. The choices that you have provided are printed on the screen as a list:
+
+		['mgcm', 'lps']
+
+27.  		MESSAGE: *** t-test IS BEING PERFORMED ON YOUR SELECTED DATA ***
+
+28.  If no error occurs, then the following message appears:
+
+		MESSAGE: *** PLEASE FIND THE RESULTS IN THE FOLLOWING FILE IN THE PRESENT DIRECTORY: t-test_output_sample_dataset_run.txt ***
+
+29.  		MESSAGE: *** YOU PERFORMED STATISTICAL TESTS ON YOUR DATA. YOU MAY CONTINUE WITH YOUR ENTIRE DATASET. OR, YOU CAN RETRIEVE(CUT) PART OF YOUR DATA BASED ON SOME THRESH-HOLD STATISTIC-VALUE *** 
+
+		Do You Want to Cut Your Data?[options: yes/no]: yes 
+
+30.  		MESSAGE: *** YOU HAVE INVOKED THE CUT_CLIENT *** 
+
+		Please Provide the Condition for Cutting Data: pval LESS 0.5
+
+31.  		MESSAGE: *** THE CUT OPERATION IS BEING PERFORMED. PLEASE WAIT FOR A FEW MOMENTS... ***
+
+32.  If no error occurs, then the following message appears:
+
+		MESSAGE: *** PLEASE FIND THE RESULTS OF CUT OPERATION IN THE FOLLOWING FILE IN THE PRESENT DIRECTORY: cut_data_output_sample_dataset_run.txt ***
+
+33.  		MESSAGE: *** THIS SECTION FINALLY PLOTS YOUR DATA ***
+
+		Do You Want to Plot Your Data?[options: yes/no]: yes
+
+34.  		MESSAGE: *** YOU HAVE INVOKED THE PLOT_CLIENT *** 
+
+		*** FOLLOWING ARE THE AVAILABLE PLOT METHODS: 1. heatmap, 2. expr_profile, 3. scatter, 4.barplot *** 
+
+		What Kind of Plot Do You Want? : heatmap 
+
+35.  		MESSAGE: *** IF YOU WANT TO VISUALIZE CLUSTERS OF YOUR DATA ON THE PLOT, YOU ARE REQUIRED TO CLUSTER YOUR DATA FIRST. ***
+
+		Do You Want to Cluster Your Data?[options: yes/no]: yes
+
+36.  		MESSAGE: *** THE PROGRAM CAN CALCULATE THE NUMBER OF CLUSTERS FROM THE DATA. OR, YOU MAY MANUALLY PROVIDE THE NUMBER OF CLUSTERS YOU WANT. ***
+
+		Do You Want to Provide the Number of Clusters Manually?[options: yes/no]: no
+
+37.  		Between Gap-score and Silhouette-Score, Which Statistic Do You Want to Use?[options: gap/sil]: gap
+
+38.  		MESSAGE: *** YOUR SELECTED DATA IS BEING CLUSTERED ***
+
+39.  If no error occurs in clustering, then the following message appears:
+
+		MESSAGE: *** THE PLOT OPERATION IS BEING PERFORMED: CLUSTER_MODE: ON. PLEASE WAIT FOR A FEW MOMENTS... ***
+
+40.  If no error occurs, then the following message appears:
+
+		MESSAGE: *** YOUR PLOT IS READY!! PLEASE FIND IT IN THE PRESENT DIRECTORY ***
+
+The plot is a pdf file. Please check in the present directory.
+
+
+     
+-------------------------------------------------- END OF USAGE FILE --------------------------------------------
